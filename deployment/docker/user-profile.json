@@ -1,0 +1,108 @@
+{
+  "attributes": [
+    {
+      "name": "username",
+      "displayName": "Username",
+      "validations": {
+        "length": {
+          "min": 3,
+          "max": 255
+        }
+      },
+      "permissions": {
+        "view": [
+          "admin",
+          "user"
+        ],
+        "edit": [
+          "admin",
+          "user"
+        ]
+      }
+    },
+    {
+      "name": "email",
+      "displayName": "Email",
+      "validations": {
+        "email": {},
+        "length": {
+          "max": 255
+        }
+      },
+      "required": {
+        "roles": [
+          "user"
+        ]
+      },
+      "permissions": {
+        "view": [
+          "admin",
+          "user"
+        ],
+        "edit": [
+          "admin",
+          "user"
+        ]
+      }
+    },
+    {
+      "name": "firstName",
+      "displayName": "First name",
+      "permissions": {
+        "view": [
+          "admin",
+          "user"
+        ],
+        "edit": [
+          "admin",
+          "user"
+        ]
+      }
+    },
+    {
+      "name": "phone_number",
+      "displayName": "Phone number",
+      "validations": {
+        "length": {
+          "max": 30
+        }
+      },
+      "permissions": {
+        "view": [
+          "admin",
+          "user"
+        ],
+        "edit": [
+          "admin",
+          "user"
+        ]
+      }
+    },
+    {
+      "name": "lastName",
+      "displayName": "Last name",
+      "permissions": {
+        "view": [
+          "admin",
+          "user"
+        ],
+        "edit": [
+          "admin",
+          "user"
+        ]
+      }
+    },
+    {
+      "name": "tenant_id",
+      "displayName": "Tenant",
+      "permissions": {
+        "view": [
+          "admin"
+        ],
+        "edit": [
+          "admin"
+        ]
+      }
+    }
+  ]
+}

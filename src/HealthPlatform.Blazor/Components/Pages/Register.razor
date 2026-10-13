@@ -1,0 +1,79 @@
+@page "/register"
+@inject AccountRegistrationService Registration
+
+<PageTitle>Créer un compte — HealthPlatform</PageTitle>
+
+<div class="auth-shell">
+    <section class="auth-panel">
+        <div class="auth-panel__intro">
+            <span class="brand-mark"><MudIcon Icon="@Icons.Material.Filled.HealthAndSafety" /></span>
+            <div class="page-eyebrow">Nouveau compte</div>
+            <MudText HtmlTag="h1" Typo="Typo.h3">Créer votre espace santé</MudText>
+            <MudText Typo="Typo.body1">Choisissez votre profil. Aucun courriel ni SMS de confirmation ne sera envoyé.</MudText>
+            <div class="secure-callout mt-5"><MudIcon Icon="@Icons.Material.Filled.Security" /><div><strong>Compte protégé</strong><p>Le mot de passe est transmis directement à Keycloak et n’est jamais conservé par le portail.</p></div></div>
+        </div>
+
+        <div class="auth-panel__form">
+            @if (created)
+            {
+                <EmptyState Title="Compte créé" Description="Votre compte est prêt. Connectez-vous pour terminer votre profil." Icon="@Icons.Material.Filled.CheckCircle">
+                    <Action><MudButton Href="/login?returnUrl=/onboarding" Variant="Variant.Filled" Color="Color.Primary">Se connecter</MudButton></Action>
+                </EmptyState>
+            }
+            else
+            {
+                <MudSelect T="string" @bind-Value="accountType" Label="Type de compte" Variant="Variant.Outlined" Required>
+                    <MudSelectItem Value="@("patient")">Patient</MudSelectItem>
+                    <MudSelectItem Value="@("practitioner")">Professionnel de santé</MudSelectItem>
+                </MudSelect>
+                <div class="auth-form-grid">
+                    <MudTextField @bind-Value="givenName" Label="Prénom" Variant="Variant.Outlined" Required MaxLength="100" />
+                    <MudTextField @bind-Value="familyName" Label="Nom" Variant="Variant.Outlined" Required MaxLength="100" />
+                </div>
+                <MudTextField @bind-Value="email" Label="Adresse courriel" Variant="Variant.Outlined" InputType="InputType.Email" Required HelperText="Utilisée comme identifiant de connexion; aucune vérification n’est envoyée." />
+                <MudTextField @bind-Value="phone" Label="Téléphone (facultatif)" Variant="Variant.Outlined" InputType="InputType.Telephone" HelperText="Aucun code SMS n’est envoyé." />
+                <div class="auth-form-grid">
+                    <MudTextField @bind-Value="password" Label="Mot de passe" Variant="Variant.Outlined" InputType="InputType.Password" Required />
+                    <MudTextField @bind-Value="confirmation" Label="Confirmer le mot de passe" Variant="Variant.Outlined" InputType="InputType.Password" Required />
+                </div>
+                <MudText Typo="Typo.caption">12 caractères minimum, avec majuscule, minuscule et chiffre.</MudText>
+                <MudCheckBox T="bool" @bind-Value="accepted" Color="Color.Primary">J’accepte les conditions d’utilisation et la politique de confidentialité.</MudCheckBox>
+                @if (!string.IsNullOrWhiteSpace(error)) { <MudAlert Severity="Severity.Error" Dense>@error</MudAlert> }
+                <MudButton OnClick="Create" Disabled="busy" FullWidth Size="Size.Large" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd">@(busy ? "Création…" : "Créer mon compte")</MudButton>
+                <MudText Class="auth-secondary" Typo="Typo.body2">Déjà inscrit? <MudLink Href="/login">Se connecter</MudLink></MudText>
+            }
+        </div>
+    </section>
+</div>
+
+@code {
+    string accountType = "patient", givenName = "", familyName = "", email = "", phone = "", password = "", confirmation = "", error = "";
+    bool accepted, busy, created;
+
+    async Task Create()
+    {
+        error = Validate();
+        if (error.Length > 0) return;
+        busy = true;
+        try
+        {
+            await Registration.RegisterAsync(new(email, password, givenName, familyName, phone, accountType));
+            created = true;
+            password = confirmation = "";
+        }
+        catch (AccountAlreadyExistsException) { error = "Un compte existe déjà avec cette adresse courriel."; }
+        catch (IdentityUnavailableException ex) { error = ex.Message; }
+        catch { error = "La création du compte a échoué. Réessayez dans quelques instants."; }
+        finally { busy = false; }
+    }
+
+    string Validate()
+    {
+        if (string.IsNullOrWhiteSpace(givenName) || string.IsNullOrWhiteSpace(familyName)) return "Le prénom et le nom sont requis.";
+        try { _ = new System.Net.Mail.MailAddress(email); } catch { return "Saisissez une adresse courriel valide."; }
+        if (password.Length < 12 || !password.Any(char.IsUpper) || !password.Any(char.IsLower) || !password.Any(char.IsDigit)) return "Le mot de passe ne respecte pas les exigences indiquées.";
+        if (password != confirmation) return "Les mots de passe ne correspondent pas.";
+        if (!accepted) return "Vous devez accepter les conditions pour créer le compte.";
+        return "";
+    }
+}

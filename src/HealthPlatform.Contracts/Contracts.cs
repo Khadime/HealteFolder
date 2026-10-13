@@ -1,0 +1,14 @@
+namespace HealthPlatform.Contracts;
+public sealed record RegisterPatientDto(string GivenName,string FamilyName,DateOnly BirthDate);
+public sealed record PatientDto(Guid Id,string GivenName,string FamilyName,DateOnly BirthDate,long Version);
+public sealed record RegisterPractitionerDto(string DisplayName,string OrganizationName,string Jurisdiction,DateOnly LicenseExpiresOn);
+public sealed record PractitionerDto(Guid Id,string DisplayName,Guid OrganizationId,string OrganizationName,DateOnly LicenseExpiresOn,bool Verified,long Version);
+public sealed record IssueQrDto(int TtlSeconds=300,int Scope=1);
+public sealed record QrDto(Guid ChallengeId,string QrPayload,DateTime ExpiresAt,string QrSvg,string BarcodeSvg);
+public sealed record ScanQrDto(string QrPayload,int Scope=1,int DurationMinutes=30);
+public sealed record DecisionDto(bool Accept,int Scope=1,int DurationMinutes=30);
+public sealed record DecisionResult(Guid RequestId,Guid? GrantId);
+public sealed record AccessRequestDto(Guid Id,string PractitionerName,string OrganizationName,string Purpose,int Scope,int DurationMinutes,DateTime ExpiresAt,string Status);
+public sealed record GrantDto(Guid Id,Guid PatientId,int Scope,DateTime ValidUntil,DateTime? RevokedAt);
+public sealed record AuditDto(Guid Id,DateTime At,string Actor,string Action,string Outcome,string Purpose,Guid? GrantId);
+public sealed record ProfileNotification(Guid EventId,Guid TenantId,string Recipient,Guid ReferenceId,string Type);

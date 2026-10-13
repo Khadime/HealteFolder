@@ -1,0 +1,99 @@
+@page "/consents"
+@attribute [Authorize]
+@inject HealthClient Api
+<PageTitle>Accès et consentements — HealthPlatform</PageTitle>
+
+<PageHeader Eyebrow="Confidentialité" Title="Accès et consentements" Description="Présentez un QR temporaire, examinez chaque demande et révoquez une autorisation à tout moment.">
+    <Actions>
+        <MudButton OnClick="Refresh" Disabled="busy" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Refresh">Actualiser</MudButton>
+        <MudButton OnClick="Generate" Disabled="@(patient is null || busy)" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.QrCode2">Créer un QR</MudButton>
+    </Actions>
+</PageHeader>
+
+<div class="secure-callout mb-5"><MudIcon Icon="@Icons.Material.Filled.Shield" /><div><strong>Le scan ne donne pas accès au dossier.</strong><p>Il crée une demande. Vous devez ensuite accepter explicitement sa portée et sa durée.</p></div></div>
+@if (error is not null) { <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">@error</MudAlert> }
+
+@if (qr is not null)
+{
+    <QrCodePanel QrSvg="@((MarkupString)qr.QrSvg)" ExpiresAt="@qr.ExpiresAt">
+        <Details>
+            <MudExpansionPanels Elevation="0">
+                <MudExpansionPanel Text="Options pour lecteurs externes">
+                    <MudText Typo="Typo.body2" Class="mb-2">Code-barres PDF417</MudText>
+                    <div class="qr-panel__visual">@((MarkupString)qr.BarcodeSvg)</div>
+                    <MudText Typo="Typo.body2" Class="mt-3 mb-1">Jeton temporaire</MudText>
+                    <textarea class="secure-token" readonly aria-label="Jeton temporaire">@qr.QrPayload</textarea>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+        </Details>
+    </QrCodePanel>
+}
+else
+{
+    <MedicalCard Title="Partager temporairement mon profil" Subtitle="QR signé, valable cinq minutes" Icon="@Icons.Material.Filled.QrCode2">
+        <EmptyState Title="Aucun QR actif" Description="Créez un code uniquement lorsque le professionnel est prêt à le scanner." Icon="@Icons.Material.Filled.QrCode2">
+            <Action><MudButton OnClick="Generate" Disabled="@(patient is null || busy)" Variant="Variant.Filled" Color="Color.Primary">Créer mon QR</MudButton></Action>
+        </EmptyState>
+    </MedicalCard>
+}
+
+<div class="section-grid mt-5">
+    <MedicalCard Title="Demandes reçues" Subtitle="Votre décision est requise" Icon="@Icons.Material.Filled.PersonAddAlt1">
+        @if (requests.Count == 0)
+        {
+            <EmptyState Title="Aucune demande en attente" Description="Les nouvelles demandes apparaîtront ici en temps réel." Icon="@Icons.Material.Filled.MarkEmailRead" />
+        }
+        @foreach (var request in requests)
+        {
+            <article class="request-card">
+                <div><div class="request-card__title">@request.PractitionerName</div><div class="request-card__meta">@request.OrganizationName · Profil administratif · @request.DurationMinutes minutes</div><StatusBadge Text="@request.Status" Tone="@(request.Status == "Pending" ? "warning" : "neutral")" /></div>
+                @if (request.Status == "Pending" && request.ExpiresAt > DateTime.UtcNow)
+                {
+                    <div class="request-card__actions"><MudButton OnClick="() => Decide(request, false)" Disabled="busy" Variant="Variant.Text" Color="Color.Error">Refuser</MudButton><MudButton OnClick="() => Decide(request, true)" Disabled="busy" Variant="Variant.Filled" Color="Color.Success">Autoriser</MudButton></div>
+                }
+            </article>
+        }
+    </MedicalCard>
+    <MedicalCard Title="Autorisations" Subtitle="Accès en cours et terminés" Icon="@Icons.Material.Filled.Key">
+        @if (grants.Count == 0)
+        {
+            <EmptyState Title="Aucune autorisation" Description="Vous n’avez accordé aucun accès à votre profil." Icon="@Icons.Material.Filled.NoAccounts" />
+        }
+        @foreach (var grant in grants)
+        {
+            var active = grant.RevokedAt is null && grant.ValidUntil > DateTime.UtcNow;
+            <article class="request-card"><div><div class="request-card__title">Profil administratif</div><div class="request-card__meta">Jusqu’au @grant.ValidUntil.ToLocalTime().ToString("dd MMM, HH:mm")</div><StatusBadge Text="@(active ? "Actif" : "Terminé")" Tone="@(active ? "success" : "neutral")" /></div>@if (active) { <div class="request-card__actions"><MudButton OnClick="() => Revoke(grant.Id)" Disabled="busy" Variant="Variant.Outlined" Color="Color.Error">Révoquer</MudButton></div> }</article>
+        }
+    </MedicalCard>
+</div>
+
+<MedicalCard Title="Historique d’accès" Subtitle="Traçabilité de votre dossier" Icon="@Icons.Material.Filled.FactCheck" Class="mt-5">
+    @if (audit.Count == 0) { <EmptyState Title="Aucun événement" Description="Les demandes et consultations seront consignées ici." Icon="@Icons.Material.Filled.History" /> }
+    else { <div class="audit-list">@foreach (var item in audit) { <AuditCard At="@item.At" Actor="@item.Actor" Action="@item.Action" Outcome="@item.Outcome" /> }</div> }
+</MedicalCard>
+
+@code {
+    Guid? patient;
+    QrDto? qr;
+    string? error;
+    bool busy;
+    List<AccessRequestDto> requests = [];
+    List<GrantDto> grants = [];
+    List<AuditDto> audit = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Refresh();
+        try { await Api.Subscribe(() => InvokeAsync(async () => { await Refresh(); StateHasChanged(); })); }
+        catch { error = "Les notifications temps réel sont indisponibles. Utilisez Actualiser."; }
+    }
+    async Task Refresh()
+    {
+        try { patient = (await Api.Get<Me>("me"))?.PatientId; if (patient is not null) { requests = await Api.Get<List<AccessRequestDto>>($"patients/{patient}/access-requests") ?? []; grants = await Api.Get<List<GrantDto>>($"patients/{patient}/access-grants") ?? []; audit = await Api.Get<List<AuditDto>>($"patients/{patient}/audit-events") ?? []; } else error = "Créez d’abord votre profil dans Mon dossier."; }
+        catch (Exception e) { error = e.Message; }
+    }
+    async Task Run(Func<Task> work) { busy = true; error = null; try { await work(); await Refresh(); } catch (Exception e) { error = e.Message; } finally { busy = false; } }
+    Task Generate() => Run(async () => qr = await Api.Post<QrDto>($"patients/{patient}/access-codes", new IssueQrDto()));
+    Task Decide(AccessRequestDto request, bool accept) => Run(async () => await Api.Post<DecisionResult>($"access-requests/{request.Id}/decisions", new DecisionDto(accept, 1, request.DurationMinutes)));
+    Task Revoke(Guid id) => Run(() => Api.Post($"consents/{id}/revoke", new { }));
+}

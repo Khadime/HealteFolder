@@ -1,0 +1,16 @@
+@typeparam TItem
+<div class="data-table-wrap" aria-busy="@Loading.ToString().ToLowerInvariant()">
+    @if (Loading)
+    {
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="180px" />
+    }
+    else if (Items.Count == 0)
+    {
+        <EmptyState Title="@EmptyTitle" Description="@EmptyDescription" />
+    }
+    else
+    {
+        <div class="medical-list">@foreach (var item in Items) { @RowTemplate(item) }</div>
+    }
+</div>
+@code { [Parameter] public IReadOnlyList<TItem> Items { get; set; } = []; [Parameter, EditorRequired] public RenderFragment<TItem> RowTemplate { get; set; } = default!; [Parameter] public bool Loading { get; set; } [Parameter] public string EmptyTitle { get; set; } = "Aucune donnée"; [Parameter] public string EmptyDescription { get; set; } = "Aucune information n’est disponible."; }

@@ -1,0 +1,7 @@
+.git
+.dotnet
+.secrets
+.env
+work
+**/bin
+**/obj

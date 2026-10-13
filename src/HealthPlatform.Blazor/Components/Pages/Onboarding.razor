@@ -1,0 +1,46 @@
+@page "/onboarding"
+@attribute [Authorize]
+@inject HealthClient Api
+
+<PageTitle>Finaliser mon profil — HealthPlatform</PageTitle>
+<PageHeader Eyebrow="Première connexion" Title="Finaliser votre profil" Description="Ces renseignements créent votre profil métier après l’authentification Keycloak." />
+
+@if (loading) { <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="320px" /> }
+else if (me?.IsPatient == true)
+{
+    <MedicalCard Title="Profil patient" Subtitle="Renseignements administratifs de base" Icon="@Icons.Material.Filled.Person">
+        @if (me.PatientId is not null) { <EmptyState Title="Profil patient déjà configuré" Description="Votre espace patient est prêt." Icon="@Icons.Material.Filled.CheckCircle"><Action><MudButton Href="/" Variant="Variant.Filled" Color="Color.Primary">Ouvrir mon tableau de bord</MudButton></Action></EmptyState> }
+        else
+        {
+            <div class="auth-form-grid"><MudTextField @bind-Value="givenName" Label="Prénom" Variant="Variant.Outlined" Required /><MudTextField @bind-Value="familyName" Label="Nom" Variant="Variant.Outlined" Required /></div>
+            <MudDatePicker @bind-Date="birthDate" Label="Date de naissance" Variant="Variant.Outlined" Required MaxDate="@DateTime.Today" />
+            @if (!string.IsNullOrWhiteSpace(message)) { <MudAlert Severity="@severity">@message</MudAlert> }
+            <MudButton OnClick="CreatePatient" Disabled="busy" Variant="Variant.Filled" Color="Color.Primary">Créer mon profil patient</MudButton>
+        }
+    </MedicalCard>
+}
+else if (me?.IsPractitioner == true)
+{
+    <MedicalCard Title="Profil professionnel" Subtitle="Une validation administrative sera requise avant tout accès clinique" Icon="@Icons.Material.Filled.MedicalServices">
+        @if (me.PractitionerId is not null) { <EmptyState Title="Profil professionnel enregistré" Description="Votre identité professionnelle attend sa validation administrative." Icon="@Icons.Material.Filled.PendingActions"><Action><MudButton Href="/" Variant="Variant.Filled" Color="Color.Primary">Retour au tableau de bord</MudButton></Action></EmptyState> }
+        else
+        {
+            <MudTextField @bind-Value="displayName" Label="Nom professionnel affiché" Variant="Variant.Outlined" Required />
+            <div class="auth-form-grid"><MudTextField @bind-Value="organization" Label="Établissement ou clinique" Variant="Variant.Outlined" Required /><MudTextField @bind-Value="jurisdiction" Label="Province, État ou juridiction" Variant="Variant.Outlined" Required /></div>
+            <MudDatePicker @bind-Date="licenseExpiry" Label="Date d’expiration du permis" Variant="Variant.Outlined" Required MinDate="@DateTime.Today.AddDays(1)" />
+            <div class="secure-callout"><MudIcon Icon="@Icons.Material.Filled.VerifiedUser" /><div><strong>Validation obligatoire</strong><p>La création du compte ne confirme pas le droit d’exercice. Un administrateur doit vérifier le permis et l’organisation.</p></div></div>
+            @if (!string.IsNullOrWhiteSpace(message)) { <MudAlert Severity="@severity">@message</MudAlert> }
+            <MudButton OnClick="CreatePractitioner" Disabled="busy" Variant="Variant.Filled" Color="Color.Primary">Soumettre mon profil professionnel</MudButton>
+        }
+    </MedicalCard>
+}
+else { <MudAlert Severity="Severity.Error">Aucun rôle Patient ou Professionnel n’est associé à ce compte.</MudAlert> }
+
+@code {
+    Me? me; bool loading = true, busy; string givenName = "", familyName = "", displayName = "", organization = "", jurisdiction = "", message = ""; DateTime? birthDate, licenseExpiry; Severity severity = Severity.Info;
+    protected override async Task OnInitializedAsync() { try { me = await Api.Get<Me>("me"); } catch { message = "Impossible de charger votre identité."; severity = Severity.Error; } finally { loading = false; } }
+    async Task CreatePatient() { if (string.IsNullOrWhiteSpace(givenName)||string.IsNullOrWhiteSpace(familyName)||birthDate is null){SetError("Complétez tous les champs.");return;} await Run(async()=>{await Api.Post<PatientDto>("patients",new RegisterPatientDto(givenName,familyName,DateOnly.FromDateTime(birthDate.Value)));me=me! with { PatientId=Guid.Empty };message="Profil patient créé.";}); }
+    async Task CreatePractitioner() { if (string.IsNullOrWhiteSpace(displayName)||string.IsNullOrWhiteSpace(organization)||string.IsNullOrWhiteSpace(jurisdiction)||licenseExpiry is null){SetError("Complétez tous les champs.");return;} await Run(async()=>{await Api.Post<PractitionerDto>("practitioners",new RegisterPractitionerDto(displayName,organization,jurisdiction,DateOnly.FromDateTime(licenseExpiry.Value)));me=me! with { PractitionerId=Guid.Empty };message="Profil soumis pour validation.";}); }
+    async Task Run(Func<Task> action){busy=true;try{await action();severity=Severity.Success;}catch{SetError("L’enregistrement a échoué. Reconnectez-vous et réessayez.");}finally{busy=false;}}
+    void SetError(string value){message=value;severity=Severity.Error;}
+}

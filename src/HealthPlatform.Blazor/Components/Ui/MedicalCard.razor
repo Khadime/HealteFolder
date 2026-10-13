@@ -1,0 +1,27 @@
+<section class="medical-card @Class" aria-labelledby="@headingId">
+    <div class="medical-card__head">
+        <div class="medical-card__icon" aria-hidden="true"><MudIcon Icon="@Icon" /></div>
+        <div>
+            <MudText HtmlTag="h2" Typo="Typo.h6" id="@headingId">@Title</MudText>
+            @if (!string.IsNullOrWhiteSpace(Subtitle))
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@Subtitle</MudText>
+            }
+        </div>
+        @if (Action is not null)
+        {
+            <div class="medical-card__action">@Action</div>
+        }
+    </div>
+    <div class="medical-card__body">@ChildContent</div>
+</section>
+
+@code {
+    readonly string headingId = "card-" + Guid.NewGuid().ToString("N");
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public string Icon { get; set; } = Icons.Material.Filled.HealthAndSafety;
+    [Parameter] public string Class { get; set; } = string.Empty;
+    [Parameter] public RenderFragment? Action { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

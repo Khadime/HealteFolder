@@ -1,0 +1,48 @@
+@page "/"
+<PageTitle>HealthPlatform — votre santé, vos décisions</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <PageHeader Eyebrow="Vue d’ensemble" Title="Bonjour, bienvenue dans votre espace santé" Description="Retrouvez vos informations essentielles et contrôlez les accès à votre dossier.">
+            <Actions><MudButton Href="/consents" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.QrCode2">Présenter mon QR</MudButton></Actions>
+        </PageHeader>
+        <div class="metric-grid">
+            <HealthMetricCard Label="Prochain rendez-vous" Icon="@Icons.Material.Filled.CalendarMonth" Description="Aucun rendez-vous planifié" />
+            <HealthMetricCard Label="Dernier résultat" Icon="@Icons.Material.Filled.Science" Description="Aucun résultat disponible" />
+            <HealthMetricCard Label="Prescriptions actives" Icon="@Icons.Material.Filled.Medication" Description="Module à venir" />
+            <HealthMetricCard Label="Accès actifs" Icon="@Icons.Material.Filled.AdminPanelSettings" Description="Consultez vos consentements" />
+        </div>
+        <div class="section-grid section-grid--asymmetric">
+            <MedicalCard Title="Activité récente" Subtitle="Événements de votre dossier" Icon="@Icons.Material.Filled.History">
+                <EmptyState Title="Aucune activité clinique" Description="Vos prochains événements apparaîtront ici dès que les modules cliniques seront activés." Icon="@Icons.Material.Filled.EventNote" />
+            </MedicalCard>
+            <MedicalCard Title="Contrôle des accès" Subtitle="Vous gardez la maîtrise" Icon="@Icons.Material.Filled.Security">
+                <div class="secure-callout"><MudIcon Icon="@Icons.Material.Filled.VerifiedUser" /><div><strong>Consentement requis</strong><p>Un professionnel ne peut consulter votre profil qu’après votre autorisation explicite.</p></div></div>
+                <MudButton Href="/consents" Class="mt-4" FullWidth Variant="Variant.Outlined" Color="Color.Primary">Gérer mes autorisations</MudButton>
+            </MedicalCard>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <section class="hero">
+            <div>
+                <StatusBadge Text="Données de santé protégées" Tone="info" Icon="@Icons.Material.Filled.HealthAndSafety" />
+                <h1>Votre santé. Vos données. <span>Vos décisions.</span></h1>
+                <p>Centralisez votre dossier de santé et choisissez précisément qui peut y accéder. Chaque demande est soumise à votre consentement et chaque consultation est auditée.</p>
+                <div class="hero-actions">
+                    <MudButton Href="/login" Size="Size.Large" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Login">Accéder à mon espace</MudButton>
+                    <MudButton Href="/register" Size="Size.Large" Variant="Variant.Outlined" Color="Color.Primary">Créer mon compte</MudButton>
+                </div>
+            </div>
+            <div class="hero-visual" aria-label="Aperçu de la protection des accès">
+                <div class="secure-callout"><MudIcon Icon="@Icons.Material.Filled.QrCode2" /><div><strong>QR temporaire signé</strong><p>Usage unique et durée limitée.</p></div></div>
+                <div class="secure-callout"><MudIcon Icon="@Icons.Material.Filled.HowToReg" /><div><strong>Votre accord est obligatoire</strong><p>Acceptez ou refusez chaque demande.</p></div></div>
+                <div class="secure-callout"><MudIcon Icon="@Icons.Material.Filled.FactCheck" /><div><strong>Traçabilité complète</strong><p>Chaque tentative est inscrite dans votre historique.</p></div></div>
+            </div>
+        </section>
+        <div class="trust-row">
+            <div class="trust-item"><MudIcon Icon="@Icons.Material.Filled.Lock" /><div><strong>Sécurité intégrée</strong><span>Authentification forte et accès de courte durée.</span></div></div>
+            <div class="trust-item"><MudIcon Icon="@Icons.Material.Filled.PersonPin" /><div><strong>Conçu autour du patient</strong><span>Les décisions d’accès restent entre vos mains.</span></div></div>
+            <div class="trust-item"><MudIcon Icon="@Icons.Material.Filled.Visibility" /><div><strong>Transparence</strong><span>Consultez qui a demandé ou obtenu un accès.</span></div></div>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>

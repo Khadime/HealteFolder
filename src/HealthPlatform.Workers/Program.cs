@@ -1,0 +1,4 @@
+using HealthPlatform.Workers;using HealthPlatform.Persistence;using HealthPlatform.Application;using MassTransit;using Microsoft.EntityFrameworkCore;using Hangfire;using Hangfire.InMemory;
+var b=Host.CreateApplicationBuilder(args);b.Services.AddSingleton<ICurrentActor,WorkerActor>();b.Services.AddDbContext<HealthDbContext>(o=>o.UseMySql(b.Configuration.GetConnectionString("DefaultConnection"),new MySqlServerVersion(new Version(8,0,36))));
+b.Services.AddMassTransit(x=>x.UsingRabbitMq((ctx,cfg)=>{cfg.Host(b.Configuration["RabbitMq:Host"]??"localhost","/",h=>{h.Username(b.Configuration["RabbitMq:Username"]??"health");h.Password(b.Configuration["RabbitMq:Password"]??throw new InvalidOperationException("Set RabbitMq:Password"));});}));
+b.Services.AddHangfire(c=>c.UseInMemoryStorage());b.Services.AddHangfireServer();b.Services.AddHostedService<NotificationWorker>();await b.Build().RunAsync();

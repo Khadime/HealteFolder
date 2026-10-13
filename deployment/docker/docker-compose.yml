@@ -1,0 +1,40 @@
+services:
+  mysql:
+    image: mysql:8.4
+    profiles: [container-db]
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: HealthPlatform
+    ports: ["127.0.0.1:3307:3306"]
+    volumes: ["mysql-data:/var/lib/mysql"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 10
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports: ["127.0.0.1:6379:6379"]
+    volumes: ["redis-data:/data"]
+  rabbitmq:
+    image: rabbitmq:4-management
+    environment:
+      RABBITMQ_DEFAULT_USER: health
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD}
+    ports: ["127.0.0.1:5672:5672", "127.0.0.1:15672:15672"]
+    volumes: ["rabbit-data:/var/lib/rabbitmq"]
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.4
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?Set KEYCLOAK_ADMIN_PASSWORD}
+      HEALTH_WEB_SECRET: ${HEALTH_WEB_SECRET:?Set HEALTH_WEB_SECRET}
+      HEALTH_REGISTRATION_SECRET: ${HEALTH_REGISTRATION_SECRET:?Set HEALTH_REGISTRATION_SECRET}
+    ports: ["127.0.0.1:8080:8080"]
+    volumes: ["./health-realm.json:/opt/keycloak/data/import/health-realm.json:ro", "keycloak-data:/opt/keycloak/data"]
+volumes:
+  mysql-data:
+  redis-data:
+  rabbit-data:
+  keycloak-data:

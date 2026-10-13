@@ -1,0 +1,6 @@
+<article class="entity-card">
+    <div class="entity-card__avatar"><MudIcon Icon="@Icons.Material.Filled.MedicalServices" /></div>
+    <div class="entity-card__content"><strong>@Name</strong><span>@Organization</span><small>@Specialty</small></div>
+    <StatusBadge Text="@(Verified ? "Vérifié" : "À vérifier")" Tone="@(Verified ? "success" : "warning")" Icon="@(Verified ? Icons.Material.Filled.Verified : Icons.Material.Filled.Warning)" />
+</article>
+@code { [Parameter] public string Name { get; set; } = string.Empty; [Parameter] public string Organization { get; set; } = string.Empty; [Parameter] public string Specialty { get; set; } = string.Empty; [Parameter] public bool Verified { get; set; } }

@@ -1,0 +1,5 @@
+<section class="secure-dialog" role="group" aria-labelledby="@id">
+    <MudIcon Icon="@Icons.Material.Filled.GppGood" Size="Size.Large" aria-hidden="true" />
+    <div><MudText id="@id" HtmlTag="h2" Typo="Typo.h6">@Title</MudText><MudText Typo="Typo.body2">@Description</MudText><div class="secure-dialog__content">@ChildContent</div></div>
+</section>
+@code { readonly string id = "secure-" + Guid.NewGuid().ToString("N"); [Parameter] public string Title { get; set; } = "Action sécurisée"; [Parameter] public string Description { get; set; } = string.Empty; [Parameter] public RenderFragment? ChildContent { get; set; } }

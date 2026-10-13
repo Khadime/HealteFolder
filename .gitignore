@@ -1,0 +1,96 @@
+# Build .NET et artefacts de publication
+**/bin/
+**/obj/
+**/out/
+**/publish/
+artifacts/
+**/TestResults/
+**/BenchmarkDotNet.Artifacts/
+coverage/
+coverage.*
+*.coverage
+*.coveragexml
+*.trx
+
+# SDK et outils installés localement par les scripts du projet
+/.dotnet/
+/.android-sdk/
+/.jdk/
+/work/
+
+# Visual Studio, VS Code et JetBrains
+/.vs/
+/.vscode/
+/.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+*.DotSettings.user
+
+# Secrets et configuration propres à la machine
+/.env
+/.env.*
+!/.env.example
+/.secrets/
+**/appsettings.Local.json
+**/appsettings.*.local.json
+**/secrets.json
+*.pfx
+*.p12
+*.snk
+*.key
+*.private.pem
+*.keystore
+*.jks
+local.properties
+
+# MAUI, Android et Apple
+*.apk
+*.aab
+*.ipa
+*.dSYM/
+*.xcarchive/
+**/.gradle/
+**/captures/
+
+# Journaux et fichiers temporaires
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+*.pid
+
+# Bases et caches locaux
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.cache
+
+# Infrastructure locale et Terraform
+docker-compose.override.yml
+docker-compose.*.local.yml
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+*.secret.yaml
+*.secret.yml
+
+# Système d’exploitation
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/

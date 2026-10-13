@@ -1,0 +1,82 @@
+@inherits LayoutComponentBase
+@inject IJSRuntime JS
+
+<MudThemeProvider Theme="HealthTheme.Theme" @bind-IsDarkMode="isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<a class="skip-link" href="#main-content">Aller au contenu principal</a>
+<MudLayout>
+    <MudAppBar Elevation="0" Class="health-appbar">
+        <MudIconButton Class="drawer-toggle" Icon="@Icons.Material.Filled.Menu" OnClick="ToggleDrawer" aria-label="Ouvrir la navigation" />
+        <a href="/" class="brand" aria-label="HealthPlatform — accueil">
+            <span class="brand-mark"><MudIcon Icon="@Icons.Material.Filled.HealthAndSafety" /></span>
+            <span><strong>Health</strong>Platform<small>Mon espace santé</small></span>
+        </a>
+        <MudSpacer />
+        <div class="trust-indicator"><MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" /><span>Connexion protégée</span></div>
+        <MudIconButton Icon="@(isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)" OnClick="ToggleTheme" aria-label="Changer le thème clair ou sombre" />
+        <AuthorizeView>
+            <Authorized><StatusBadge Text="Session active" Tone="success" Icon="@Icons.Material.Filled.VerifiedUser" /><MudIconButton Href="/logout" Icon="@Icons.Material.Filled.Logout" aria-label="Se déconnecter" /></Authorized>
+            <NotAuthorized><MudButton Href="/login" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Login">Connexion</MudButton></NotAuthorized>
+        </AuthorizeView>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="drawerOpen" Variant="DrawerVariant.Responsive" Breakpoint="Breakpoint.Md" Elevation="0" Class="health-drawer">
+        <nav aria-label="Navigation principale">
+            <div class="nav-section-label">Espace santé</div>
+            <MudNavMenu>
+                <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.SpaceDashboard">Vue d’ensemble</MudNavLink>
+                <MudNavLink Href="/patient" Icon="@Icons.Material.Filled.FolderShared">Mon dossier</MudNavLink>
+                <MudNavLink Href="/results" Icon="@Icons.Material.Filled.Science">Mes résultats</MudNavLink>
+                <MudNavLink Href="/prescriptions" Icon="@Icons.Material.Filled.Medication">Mes prescriptions</MudNavLink>
+                <MudNavLink Href="/appointments" Icon="@Icons.Material.Filled.CalendarMonth">Mes rendez-vous</MudNavLink>
+                <MudNavLink Href="/documents" Icon="@Icons.Material.Filled.Description">Documents</MudNavLink>
+            </MudNavMenu>
+            <div class="nav-section-label">Confidentialité</div>
+            <MudNavMenu>
+                <MudNavLink Href="/consents" Icon="@Icons.Material.Filled.AdminPanelSettings">Accès et consentements</MudNavLink>
+                <MudNavLink Href="/history" Icon="@Icons.Material.Filled.History">Historique d’accès</MudNavLink>
+            </MudNavMenu>
+            <div class="nav-section-label">Professionnels</div>
+            <MudNavMenu><MudNavLink Href="/scan" Icon="@Icons.Material.Filled.QrCodeScanner">Accès patient sécurisé</MudNavLink></MudNavMenu>
+        </nav>
+        <div class="drawer-security-note">
+            <MudIcon Icon="@Icons.Material.Filled.Security" />
+            <div><strong>Vos données restent sous votre contrôle.</strong><span>Chaque accès est autorisé et audité.</span></div>
+        </div>
+    </MudDrawer>
+
+    <MudMainContent>
+        <main id="main-content" class="health-main" tabindex="-1">@Body</main>
+    </MudMainContent>
+
+    <nav class="mobile-nav" aria-label="Navigation mobile">
+        <a href="/"><MudIcon Icon="@Icons.Material.Filled.SpaceDashboard" /><span>Accueil</span></a>
+        <a href="/patient"><MudIcon Icon="@Icons.Material.Filled.FolderShared" /><span>Dossier</span></a>
+        <a href="/consents" class="mobile-nav__primary"><MudIcon Icon="@Icons.Material.Filled.QrCode2" /><span>Mon QR</span></a>
+        <a href="/appointments"><MudIcon Icon="@Icons.Material.Filled.CalendarMonth" /><span>Rendez-vous</span></a>
+        <a href="/scan"><MudIcon Icon="@Icons.Material.Filled.MedicalServices" /><span>Pro</span></a>
+    </nav>
+</MudLayout>
+
+@code {
+    bool drawerOpen = true;
+    bool isDarkMode;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        var stored = await JS.InvokeAsync<string?>("healthTheme.get");
+        if (bool.TryParse(stored, out var value)) isDarkMode = value;
+        StateHasChanged();
+    }
+
+    void ToggleDrawer() => drawerOpen = !drawerOpen;
+    async Task ToggleTheme()
+    {
+        isDarkMode = !isDarkMode;
+        await JS.InvokeVoidAsync("healthTheme.set", isDarkMode.ToString());
+    }
+}

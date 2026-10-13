@@ -1,0 +1,6 @@
+<article class="entity-card">
+    <div class="entity-card__avatar"><MudIcon Icon="@Icons.Material.Filled.Medication" /></div>
+    <div class="entity-card__content"><strong>@Medication</strong><span>@Instructions</span><small>Prescrit par @Prescriber</small></div>
+    <StatusBadge Text="@Status" Tone="@(Status == "Active" ? "success" : "neutral")" Icon="@Icons.Material.Filled.CheckCircle" />
+</article>
+@code { [Parameter] public string Medication { get; set; } = string.Empty; [Parameter] public string Instructions { get; set; } = string.Empty; [Parameter] public string Prescriber { get; set; } = string.Empty; [Parameter] public string Status { get; set; } = "Active"; }

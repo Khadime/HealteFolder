@@ -1,0 +1,84 @@
+@page "/patient"
+@attribute [Authorize]
+@inject HealthClient Api
+<PageTitle>Mon dossier — HealthPlatform</PageTitle>
+
+<PageHeader Eyebrow="Dossier patient électronique" Title="Mon dossier" Description="Une vue structurée de vos informations de santé. Les données absentes ne sont jamais estimées." />
+
+@if (error is not null)
+{
+    <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">@error</MudAlert>
+}
+@if (!loaded)
+{
+    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="150px" Class="mb-4" />
+    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="300px" />
+}
+else if (profile is not null)
+{
+    <PatientCard GivenName="@profile.GivenName" FamilyName="@profile.FamilyName" BirthDate="@profile.BirthDate" />
+    <div class="record-layout mt-5">
+        <nav class="record-menu" aria-label="Sections du dossier médical">
+            <a href="#summary" class="active"><MudIcon Icon="@Icons.Material.Filled.AssignmentInd" Size="Size.Small" />Résumé clinique</a>
+            <a href="#history"><MudIcon Icon="@Icons.Material.Filled.HistoryEdu" Size="Size.Small" />Antécédents</a>
+            <a href="#allergies"><MudIcon Icon="@Icons.Material.Filled.WarningAmber" Size="Size.Small" />Allergies</a>
+            <a href="#medications"><MudIcon Icon="@Icons.Material.Filled.Medication" Size="Size.Small" />Médicaments</a>
+            <a href="#laboratory"><MudIcon Icon="@Icons.Material.Filled.Science" Size="Size.Small" />Laboratoire</a>
+            <a href="#documents"><MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" />Documents</a>
+        </nav>
+        <div id="summary">
+            <div class="metric-grid">
+                <HealthMetricCard Label="Poids" Unit="kg" Icon="@Icons.Material.Filled.MonitorWeight" />
+                <HealthMetricCard Label="Tension" Unit="mmHg" Icon="@Icons.Material.Filled.Favorite" />
+                <HealthMetricCard Label="Glycémie" Unit="mmol/L" Icon="@Icons.Material.Filled.WaterDrop" />
+                <HealthMetricCard Label="Fréquence cardiaque" Unit="bpm" Icon="@Icons.Material.Filled.MonitorHeart" />
+            </div>
+            <div class="section-grid">
+                <MedicalCard Title="Résumé clinique" Subtitle="Informations confirmées" Icon="@Icons.Material.Filled.Assignment">
+                    <EmptyState Title="Résumé clinique non disponible" Description="Le MVP contient actuellement votre profil administratif. Les données cliniques seront ajoutées dans une prochaine phase." />
+                </MedicalCard>
+                <MedicalCard Title="Vaccinations" Subtitle="Historique vaccinal" Icon="@Icons.Material.Filled.Vaccines">
+                    <EmptyState Title="Aucune vaccination importée" Description="Aucune donnée de vaccination n’est disponible dans votre dossier." Icon="@Icons.Material.Filled.Vaccines" />
+                </MedicalCard>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="section-grid section-grid--asymmetric">
+        <MedicalCard Title="Créer mon profil patient" Subtitle="Première étape de votre dossier" Icon="@Icons.Material.Filled.PersonAdd">
+            <MudTextField @bind-Value="given" Label="Prénom" Variant="Variant.Outlined" Required Class="mb-3" />
+            <MudTextField @bind-Value="family" Label="Nom" Variant="Variant.Outlined" Required Class="mb-3" />
+            <MudDatePicker @bind-Date="birth" Label="Date de naissance" Variant="Variant.Outlined" Class="mb-4" />
+            <MudButton OnClick="Register" Disabled="busy" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">Enregistrer mon profil</MudButton>
+        </MedicalCard>
+        <MedicalCard Title="Pourquoi ces informations?" Icon="@Icons.Material.Filled.PrivacyTip">
+            <div class="secure-callout"><MudIcon Icon="@Icons.Material.Filled.Lock" /><div><strong>Usage limité</strong><p>Ces données servent à identifier votre dossier. Leur consultation est soumise aux mêmes contrôles d’accès.</p></div></div>
+        </MedicalCard>
+    </div>
+}
+
+@code {
+    PatientDto? profile;
+    string? error;
+    string given = "", family = "";
+    DateTime? birth = new DateTime(1990, 1, 1);
+    bool loaded, busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { var me = await Api.Get<Me>("me"); if (me?.PatientId is Guid id) profile = await Api.Get<PatientDto>($"patients/{id}"); }
+        catch (Exception e) { error = e.Message; }
+        finally { loaded = true; }
+    }
+
+    async Task Register()
+    {
+        if (birth is null) { error = "La date de naissance est requise."; return; }
+        busy = true;
+        try { profile = await Api.Post<PatientDto>("patients", new RegisterPatientDto(given, family, DateOnly.FromDateTime(birth.Value))); error = null; }
+        catch (Exception e) { error = e.Message; }
+        finally { busy = false; }
+    }
+}

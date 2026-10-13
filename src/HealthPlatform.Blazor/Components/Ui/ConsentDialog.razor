@@ -1,0 +1,5 @@
+<SecureDialog Title="Confirmer le consentement" Description="Vérifiez la portée et la durée avant de décider.">
+    <dl class="consent-summary"><dt>Professionnel</dt><dd>@Practitioner</dd><dt>Organisation</dt><dd>@Organization</dd><dt>Portée</dt><dd>@Scope</dd><dt>Durée</dt><dd>@DurationMinutes minutes</dd></dl>
+    <div class="request-card__actions"><MudButton OnClick="() => OnDecision.InvokeAsync(false)" Color="Color.Error">Refuser</MudButton><MudButton OnClick="() => OnDecision.InvokeAsync(true)" Variant="Variant.Filled" Color="Color.Success">Autoriser</MudButton></div>
+</SecureDialog>
+@code { [Parameter] public string Practitioner { get; set; } = string.Empty; [Parameter] public string Organization { get; set; } = string.Empty; [Parameter] public string Scope { get; set; } = "Profil administratif"; [Parameter] public int DurationMinutes { get; set; } [Parameter] public EventCallback<bool> OnDecision { get; set; } }

@@ -1,0 +1,16 @@
+<article class="patient-card">
+    <div class="patient-avatar" aria-hidden="true">@Initials</div>
+    <div class="patient-card__identity">
+        <div class="patient-card__name">@GivenName @FamilyName</div>
+        <div class="patient-card__meta">Né(e) le @BirthDate.ToString("dd MMMM yyyy", System.Globalization.CultureInfo.GetCultureInfo("fr-CA"))</div>
+        <div class="patient-card__source"><MudIcon Icon="@Icons.Material.Filled.VerifiedUser" Size="Size.Small" /> Profil déclaré par le patient</div>
+    </div>
+    <StatusBadge Text="Dossier actif" Tone="success" Icon="@Icons.Material.Filled.CheckCircle" />
+</article>
+
+@code {
+    [Parameter] public string GivenName { get; set; } = string.Empty;
+    [Parameter] public string FamilyName { get; set; } = string.Empty;
+    [Parameter] public DateOnly BirthDate { get; set; }
+    string Initials => $"{GivenName.FirstOrDefault()}{FamilyName.FirstOrDefault()}".Trim('\0').ToUpperInvariant();
+}

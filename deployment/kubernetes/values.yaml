@@ -1,0 +1,3 @@
+image: "healthplatform-api:0.1.0"
+replicas: 2
+existingSecret: healthplatform-api

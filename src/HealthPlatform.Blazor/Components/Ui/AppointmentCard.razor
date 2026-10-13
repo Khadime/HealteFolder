@@ -1,0 +1,6 @@
+<article class="entity-card">
+    <div class="date-tile"><strong>@At.ToLocalTime().ToString("dd")</strong><span>@At.ToLocalTime().ToString("MMM", System.Globalization.CultureInfo.GetCultureInfo("fr-CA"))</span></div>
+    <div class="entity-card__content"><strong>@Title</strong><span>@Practitioner</span><small>@At.ToLocalTime().ToString("HH:mm") · @Location</small></div>
+    <StatusBadge Text="@Status" Tone="info" Icon="@Icons.Material.Filled.EventAvailable" />
+</article>
+@code { [Parameter] public DateTime At { get; set; } [Parameter] public string Title { get; set; } = string.Empty; [Parameter] public string Practitioner { get; set; } = string.Empty; [Parameter] public string Location { get; set; } = string.Empty; [Parameter] public string Status { get; set; } = "Confirmé"; }

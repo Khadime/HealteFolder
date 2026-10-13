@@ -1,0 +1,9 @@
+@if (Items.Count == 0)
+{
+    <EmptyState Title="Aucun événement clinique" Description="Les événements confirmés apparaîtront ici." Icon="@Icons.Material.Filled.Timeline" />
+}
+else
+{
+    <ol class="clinical-timeline">@foreach (var item in Items) { <li><span aria-hidden="true"></span><div><strong>@item</strong></div></li> }</ol>
+}
+@code { [Parameter] public IReadOnlyList<string> Items { get; set; } = []; }

@@ -1,0 +1,5 @@
+<article class="notification-card @(Unread ? "notification-card--unread" : null)">
+    <MudIcon Icon="@Icon" aria-hidden="true" />
+    <div><strong>@Title</strong><p>@Message</p><small>@At.ToLocalTime().ToString("dd MMM, HH:mm")</small></div>
+</article>
+@code { [Parameter] public string Title { get; set; } = string.Empty; [Parameter] public string Message { get; set; } = string.Empty; [Parameter] public DateTime At { get; set; } [Parameter] public bool Unread { get; set; } [Parameter] public string Icon { get; set; } = Icons.Material.Filled.Notifications; }

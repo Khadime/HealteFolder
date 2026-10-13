@@ -1,0 +1,20 @@
+{
+  "solution": {
+    "projects": [
+      "src/HealthPlatform.Api/HealthPlatform.Api.csproj",
+      "src/HealthPlatform.Application/HealthPlatform.Application.csproj",
+      "src/HealthPlatform.Domain/HealthPlatform.Domain.csproj",
+      "src/HealthPlatform.Infrastructure/HealthPlatform.Infrastructure.csproj",
+      "src/HealthPlatform.Persistence/HealthPlatform.Persistence.csproj",
+      "src/HealthPlatform.Contracts/HealthPlatform.Contracts.csproj",
+      "src/HealthPlatform.SharedKernel/HealthPlatform.SharedKernel.csproj",
+      "src/HealthPlatform.Blazor/HealthPlatform.Blazor.csproj",
+      "src/HealthPlatform.Gateway/HealthPlatform.Gateway.csproj",
+      "src/HealthPlatform.Workers/HealthPlatform.Workers.csproj",
+      "tests/HealthPlatform.UnitTests/HealthPlatform.UnitTests.csproj",
+      "tests/HealthPlatform.IntegrationTests/HealthPlatform.IntegrationTests.csproj",
+      "tests/HealthPlatform.ArchitectureTests/HealthPlatform.ArchitectureTests.csproj"
+    ],
+    "path": "HealthPlatform.sln"
+  }
+}

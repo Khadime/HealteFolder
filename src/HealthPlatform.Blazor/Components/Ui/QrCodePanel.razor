@@ -1,0 +1,19 @@
+<section class="qr-panel" aria-label="Code QR temporaire">
+    <div class="qr-panel__visual">@QrSvg</div>
+    <div class="qr-panel__details">
+        <StatusBadge Text="Usage unique" Tone="success" Icon="@Icons.Material.Filled.EnhancedEncryption" />
+        <MudText Typo="Typo.h6">Accès temporaire signé</MudText>
+        <MudText>Présentez ce code au professionnel. Le scan crée seulement une demande que vous devrez autoriser.</MudText>
+        <div class="qr-expiry"><MudIcon Icon="@Icons.Material.Filled.Schedule" /><span>Expire à <strong>@ExpiresAt.ToLocalTime().ToString("HH:mm:ss")</strong></span></div>
+        @if (Details is not null)
+        {
+            <div class="qr-panel__technical">@Details</div>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter] public MarkupString QrSvg { get; set; }
+    [Parameter] public DateTime ExpiresAt { get; set; }
+    [Parameter] public RenderFragment? Details { get; set; }
+}

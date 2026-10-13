@@ -1,0 +1,13 @@
+<article class="metric-card">
+    <div class="metric-card__top"><span>@Label</span><MudIcon Icon="@Icon" aria-hidden="true" /></div>
+    <div class="metric-card__value">@Value <small>@Unit</small></div>
+    <div class="metric-card__meta">@Description</div>
+</article>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+    [Parameter] public string Value { get; set; } = "—";
+    [Parameter] public string Unit { get; set; } = string.Empty;
+    [Parameter] public string Description { get; set; } = "Donnée non disponible";
+    [Parameter] public string Icon { get; set; } = Icons.Material.Filled.MonitorHeart;
+}

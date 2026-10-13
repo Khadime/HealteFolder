@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>HealthPlatform.Mobile</RootNamespace>
+    <UseMaui>true</UseMaui>
+    <SingleProject>true</SingleProject>
+    <ApplicationTitle>HealthPlatform</ApplicationTitle>
+    <ApplicationId>com.healthplatform.mobile</ApplicationId>
+    <ApplicationDisplayVersion>0.1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+    <SupportedOSPlatformVersion>26.0</SupportedOSPlatformVersion>
+    <AndroidManifest Condition="'$(Configuration)' == 'Debug'">Platforms\Android\AndroidManifest.Debug.xml</AndroidManifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.10" />
+    <PackageReference Include="CommunityToolkit.Maui" Version="13.0.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="ZXing.Net.Maui.Controls" Version="0.7.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../HealthPlatform.Contracts/HealthPlatform.Contracts.csproj" />
+    <MauiIcon Include="Resources/AppIcon/appicon.svg" Color="#126E70" />
+    <MauiSplashScreen Include="Resources/Splash/splash.svg" Color="#126E70" BaseSize="128,128" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,52 @@
+@page "/scan"
+@attribute [Authorize(Roles = "practitioner")]
+@inject HealthClient Api
+<PageTitle>Accès patient sécurisé — HealthPlatform</PageTitle>
+
+<PageHeader Eyebrow="Espace professionnel" Title="Accès patient sécurisé" Description="Demandez un accès limité au profil présenté par le patient. Votre identité, votre organisation et chaque tentative sont vérifiées." />
+
+<div class="workflow-steps" aria-label="Parcours d’accès en trois étapes">
+    <div class="workflow-step"><b>1</b><span>Scanner le QR du patient</span></div>
+    <div class="workflow-step"><b>2</b><span>Attendre son autorisation</span></div>
+    <div class="workflow-step"><b>3</b><span>Consulter pendant la durée accordée</span></div>
+</div>
+@if (message is not null) { <MudAlert Severity="@messageSeverity" Variant="Variant.Outlined" Class="mb-4">@message</MudAlert> }
+
+<div class="section-grid">
+    <MedicalCard Title="Demander un accès" Subtitle="QR ou lecteur externe" Icon="@Icons.Material.Filled.QrCodeScanner">
+        <MudTextField @bind-Value="payload" Label="Code présenté par le patient" Variant="Variant.Outlined" Lines="5" HelperText="Le code est temporaire et à usage unique." />
+        <MudNumericField @bind-Value="minutes" Label="Durée demandée (minutes)" Variant="Variant.Outlined" Min="1" Max="120" Class="mt-3" />
+        <MudButton OnClick="ScanCode" Disabled="busy || string.IsNullOrWhiteSpace(payload)" Class="mt-4" FullWidth Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Send">Envoyer la demande au patient</MudButton>
+    </MedicalCard>
+    <MedicalCard Title="Consulter un profil autorisé" Subtitle="Autorisation active requise" Icon="@Icons.Material.Filled.FolderShared">
+        <MudTextField @bind-Value="patientId" Label="Référence du patient" Variant="Variant.Outlined" HelperText="Utilisez la référence reçue après autorisation." />
+        <MudButton OnClick="Read" Disabled="busy || string.IsNullOrWhiteSpace(patientId)" Class="mt-4" FullWidth Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Visibility">Ouvrir le profil</MudButton>
+        @if (profile is not null) { <div class="mt-4"><PatientCard GivenName="@profile.GivenName" FamilyName="@profile.FamilyName" BirthDate="@profile.BirthDate" /></div> }
+    </MedicalCard>
+</div>
+
+<div class="secure-callout mt-5"><MudIcon Icon="@Icons.Material.Filled.Policy" /><div><strong>Accès clinique responsable</strong><p>Consultez uniquement les informations nécessaires aux soins. Chaque lecture est associée à votre identité et inscrite dans l’audit.</p></div></div>
+
+@code {
+    string payload = "", patientId = "";
+    int minutes = 30;
+    string? message;
+    Severity messageSeverity = Severity.Info;
+    PatientDto? profile;
+    bool busy;
+
+    async Task ScanCode()
+    {
+        busy = true; message = null;
+        try { await Api.Post("access-codes/scan", new ScanQrDto(payload, 1, minutes)); payload = ""; message = "Demande envoyée. L’accord du patient est maintenant nécessaire."; messageSeverity = Severity.Success; }
+        catch (Exception e) { message = e.Message; messageSeverity = Severity.Warning; }
+        finally { busy = false; }
+    }
+    async Task Read()
+    {
+        busy = true; profile = null;
+        try { if (!Guid.TryParse(patientId, out var id)) throw new InvalidOperationException("La référence du patient est invalide."); profile = await Api.Get<PatientDto>($"patients/{id}"); message = "Autorisation vérifiée."; messageSeverity = Severity.Success; }
+        catch (Exception e) { message = e.Message; messageSeverity = Severity.Warning; }
+        finally { busy = false; }
+    }
+}

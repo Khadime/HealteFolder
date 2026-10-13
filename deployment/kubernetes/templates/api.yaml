@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healthplatform-api
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels: {app: healthplatform-api}
+  template:
+    metadata:
+      labels: {app: healthplatform-api}
+    spec:
+      securityContext: {runAsNonRoot: true, runAsUser: 1654}
+      containers:
+        - name: api
+          image: {{ .Values.image | quote }}
+          ports: [{containerPort: 8080}]
+          envFrom: [{secretRef: {name: {{ .Values.existingSecret }}}}]
+          env:
+            - {name: ASPNETCORE_HTTP_PORTS, value: "8080"}
+            - {name: Qr__PrivateKeyPath, value: "/secrets/qr-private.pem"}
+          volumeMounts: [{name: signing, mountPath: /secrets, readOnly: true}]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 250m, memory: 256Mi}
+            limits: {cpu: "2", memory: 1Gi}
+          readinessProbe: {httpGet: {path: /health/ready, port: 8080}, initialDelaySeconds: 10}
+          livenessProbe: {httpGet: {path: /health/live, port: 8080}, initialDelaySeconds: 20}
+      volumes: [{name: signing, secret: {secretName: healthplatform-signing}}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: healthplatform-api}
+spec:
+  selector: {app: healthplatform-api}
+  ports: [{port: 80, targetPort: 8080}]
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: {name: healthplatform-api}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {app: healthplatform-api}

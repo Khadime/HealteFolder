@@ -1,0 +1,28 @@
+name: Build and test
+on: [push, pull_request]
+permissions: {contents: read}
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env: {MYSQL_ROOT_PASSWORD: test-only-password}
+        ports: ["3306:3306"]
+        options: --health-cmd="mysqladmin ping -h localhost" --health-interval=10s --health-timeout=5s --health-retries=10
+    env:
+      HEALTH_TEST_MYSQL: "server=127.0.0.1;port=3306;user=root;password=test-only-password"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: {dotnet-version: '10.0.x'}
+      - run: dotnet restore HealthPlatform.Server.slnf
+      - run: dotnet build HealthPlatform.Server.slnf --no-restore -c Release
+      - run: dotnet test HealthPlatform.Server.slnf --no-build -c Release --collect:"XPlat Code Coverage" --results-directory TestResults
+      - run: dotnet publish src/HealthPlatform.Api -c Release --no-restore -o publish/api
+      - run: dotnet publish src/HealthPlatform.Blazor -c Release --no-restore -o publish/web
+      - uses: actions/upload-artifact@v4
+        with: {name: server, path: publish}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: test-results, path: TestResults}

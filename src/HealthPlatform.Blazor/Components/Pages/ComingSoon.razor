@@ -1,0 +1,22 @@
+@page "/results"
+@page "/prescriptions"
+@page "/appointments"
+@page "/documents"
+@page "/history"
+@attribute [Authorize]
+@inject NavigationManager Navigation
+<PageTitle>@Title — HealthPlatform</PageTitle>
+
+<PageHeader Eyebrow="Dossier patient" Title="@Title" Description="@Description" />
+<MedicalCard Title="@Title" Subtitle="Module en préparation" Icon="@Icon">
+    <EmptyState Title="Aucune donnée disponible" Description="Ce module sera activé lors de sa phase métier. HealthPlatform n’affiche aucune donnée simulée dans votre dossier." Icon="@Icon">
+        <Action><MudButton Href="/" Variant="Variant.Outlined" Color="Color.Primary">Retour au tableau de bord</MudButton></Action>
+    </EmptyState>
+</MedicalCard>
+
+@code {
+    string Segment => Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].Trim('/').ToLowerInvariant();
+    string Title => Segment switch { "results" => "Mes résultats", "prescriptions" => "Mes prescriptions", "appointments" => "Mes rendez-vous", "documents" => "Mes documents", "history" => "Historique d’accès", _ => "Mon dossier" };
+    string Description => Segment switch { "results" => "Résultats de laboratoire et comptes rendus.", "prescriptions" => "Ordonnances actives et historique médicamenteux.", "appointments" => "Agenda patient et consultations à venir.", "documents" => "Documents de santé classés et sécurisés.", "history" => "Traçabilité des demandes et consultations de votre dossier.", _ => "Informations de santé." };
+    string Icon => Segment switch { "results" => Icons.Material.Filled.Science, "prescriptions" => Icons.Material.Filled.Medication, "appointments" => Icons.Material.Filled.CalendarMonth, "documents" => Icons.Material.Filled.Description, "history" => Icons.Material.Filled.History, _ => Icons.Material.Filled.FolderShared };
+}

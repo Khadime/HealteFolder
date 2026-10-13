@@ -1,0 +1,5 @@
+<figure class="health-chart" aria-label="@AccessibleLabel">
+    @if (Values.Count == 0) { <EmptyState Title="Aucune mesure" Description="Le graphique apparaîtra lorsque des mesures seront disponibles." Icon="@Icons.Material.Filled.ShowChart" /> }
+    else { <div class="health-chart__bars" aria-hidden="true">@foreach (var value in Values) { <span style="height:@BarHeight(value)%"></span> }</div><figcaption>@AccessibleLabel</figcaption> }
+</figure>
+@code { [Parameter] public IReadOnlyList<double> Values { get; set; } = []; [Parameter] public string AccessibleLabel { get; set; } = "Évolution des mesures"; double BarHeight(double value) { var max = Values.Count == 0 ? 1 : Math.Max(Values.Max(), 1); return Math.Clamp(value / max * 100, 2, 100); } }

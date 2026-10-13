@@ -1,0 +1,14 @@
+<article class="audit-card">
+    <div class="audit-card__marker audit-card__marker--@Tone" aria-hidden="true"><MudIcon Icon="@Icon" Size="Size.Small" /></div>
+    <div><strong>@Action</strong><div class="audit-card__meta">@Actor · @At.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</div></div>
+    <StatusBadge Text="@Outcome" Tone="@Tone" Icon="@Icon" />
+</article>
+
+@code {
+    [Parameter] public DateTime At { get; set; }
+    [Parameter] public string Actor { get; set; } = string.Empty;
+    [Parameter] public string Action { get; set; } = string.Empty;
+    [Parameter] public string Outcome { get; set; } = string.Empty;
+    string Tone => Outcome.Equals("allow", StringComparison.OrdinalIgnoreCase) ? "success" : Outcome.Equals("deny", StringComparison.OrdinalIgnoreCase) ? "error" : "neutral";
+    string Icon => Tone == "success" ? Icons.Material.Filled.CheckCircle : Tone == "error" ? Icons.Material.Filled.Block : Icons.Material.Filled.Info;
+}

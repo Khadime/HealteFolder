@@ -1,0 +1,10 @@
+<span class="status-badge status-@Tone.ToLowerInvariant()" role="status">
+    <MudIcon Icon="@Icon" Size="Size.Small" aria-hidden="true" />
+    <span>@Text</span>
+</span>
+
+@code {
+    [Parameter, EditorRequired] public string Text { get; set; } = string.Empty;
+    [Parameter] public string Tone { get; set; } = "neutral";
+    [Parameter] public string Icon { get; set; } = Icons.Material.Filled.Info;
+}
