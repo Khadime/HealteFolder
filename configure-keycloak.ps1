@@ -18,13 +18,21 @@ foreach ($attempt in 1..60) {
     }
 }
 
-$token = Invoke-RestMethod -Method Post -Uri "$BaseUrl/realms/master/protocol/openid-connect/token" -ContentType 'application/x-www-form-urlencoded' -Body @{
-    grant_type = 'password'
-    client_id = 'admin-cli'
-    username = 'admin'
-    password = $settings.KEYCLOAK_ADMIN_PASSWORD
+$headers = @{}
+$tokenExpiry = [DateTime]::MinValue
+# admin-cli tokens live 60 s by default; renew before each step so long runs do not end in 401.
+function Update-AdminToken {
+    if ([DateTime]::UtcNow -lt $script:tokenExpiry) { return }
+    $token = Invoke-RestMethod -Method Post -Uri "$BaseUrl/realms/master/protocol/openid-connect/token" -ContentType 'application/x-www-form-urlencoded' -Body @{
+        grant_type = 'password'
+        client_id = 'admin-cli'
+        username = 'admin'
+        password = $settings.KEYCLOAK_ADMIN_PASSWORD
+    }
+    $script:headers.Authorization = "Bearer $($token.access_token)"
+    $script:tokenExpiry = [DateTime]::UtcNow.AddSeconds([Math]::Max(5, $token.expires_in - 20))
 }
-$headers = @{ Authorization = "Bearer $($token.access_token)" }
+Update-AdminToken
 $admin = "$BaseUrl/admin/realms/health"
 
 $realm = Invoke-RestMethod -Uri $admin -Headers $headers
@@ -41,8 +49,37 @@ $verifyAction.defaultAction = $false
 Invoke-RestMethod -Method Put -Uri "$admin/authentication/required-actions/VERIFY_EMAIL" -Headers $headers -ContentType 'application/json' -Body ($verifyAction | ConvertTo-Json -Depth 20) | Out-Null
 
 function Get-Client([string]$clientId) {
-    $items = @(Invoke-RestMethod -Uri "$admin/clients?clientId=$([Uri]::EscapeDataString($clientId))" -Headers $headers)
-    return $items | Where-Object clientId -eq $clientId | Select-Object -First 1
+    Update-AdminToken
+    # PowerShell 7 emits a JSON array as a single object; unroll it before filtering.
+    $items = Invoke-RestMethod -Uri "$admin/clients?clientId=$([Uri]::EscapeDataString($clientId))" -Headers $headers
+    return $items | ForEach-Object { $_ } | Where-Object clientId -eq $clientId | Select-Object -First 1
+}
+
+# --import-realm only runs on first start, and a realm declaring clientScopes gets none of Keycloak's
+# built-in scopes. Align an existing realm with health-realm.json so profile/basic/roles are requestable.
+$realmDefinition = Get-Content -LiteralPath (Join-Path $root 'deployment/docker/health-realm.json') -Raw | ConvertFrom-Json
+function Get-ClientScopes { Update-AdminToken; Invoke-RestMethod -Uri "$admin/client-scopes" -Headers $headers | ForEach-Object { $_ } }
+$existingScopes = @(Get-ClientScopes | ForEach-Object name)
+foreach ($scope in $realmDefinition.clientScopes | Where-Object name -notin $existingScopes) {
+    Update-AdminToken
+    Invoke-RestMethod -Method Post -Uri "$admin/client-scopes" -Headers $headers -ContentType 'application/json' -Body ($scope | ConvertTo-Json -Depth 20) | Out-Null
+    Write-Host "Client scope cree : $($scope.name)"
+}
+$scopeIds = @{}
+Get-ClientScopes | ForEach-Object { $scopeIds[$_.name] = $_.id }
+$realmDefaults = @(Invoke-RestMethod -Uri "$admin/default-default-client-scopes" -Headers $headers | ForEach-Object { $_ } | ForEach-Object name)
+foreach ($name in $realmDefinition.defaultDefaultClientScopes | Where-Object { $_ -notin $realmDefaults }) {
+    Update-AdminToken
+    Invoke-RestMethod -Method Put -Uri "$admin/default-default-client-scopes/$($scopeIds[$name])" -Headers $headers | Out-Null
+}
+foreach ($definition in $realmDefinition.clients | Where-Object { $_.PSObject.Properties['defaultClientScopes'] }) {
+    $client = Get-Client $definition.clientId
+    $assigned = @(Invoke-RestMethod -Uri "$admin/clients/$($client.id)/default-client-scopes" -Headers $headers | ForEach-Object { $_ } | ForEach-Object name)
+    foreach ($name in $definition.defaultClientScopes | Where-Object { $_ -notin $assigned }) {
+        Update-AdminToken
+        Invoke-RestMethod -Method Put -Uri "$admin/clients/$($client.id)/default-client-scopes/$($scopeIds[$name])" -Headers $headers | Out-Null
+        Write-Host "Scope $name attache a $($definition.clientId)"
+    }
 }
 
 $web = Get-Client 'health-web'
@@ -70,6 +107,7 @@ else {
     Invoke-RestMethod -Method Put -Uri "$admin/clients/$($registration.id)" -Headers $headers -ContentType 'application/json' -Body ($registration | ConvertTo-Json -Depth 30) | Out-Null
 }
 
+Update-AdminToken
 $serviceUser = Invoke-RestMethod -Uri "$admin/clients/$($registration.id)/service-account-user" -Headers $headers
 $realmManagement = Get-Client 'realm-management'
 $managementRoles = foreach ($roleName in 'manage-users','query-users','view-users') {
@@ -77,6 +115,7 @@ $managementRoles = foreach ($roleName in 'manage-users','query-users','view-user
 }
 Invoke-RestMethod -Method Post -Uri "$admin/users/$($serviceUser.id)/role-mappings/clients/$($realmManagement.id)" -Headers $headers -ContentType 'application/json' -Body ($managementRoles | ConvertTo-Json -Depth 20 -AsArray) | Out-Null
 
+Update-AdminToken
 try {
     $defaultRole = Invoke-RestMethod -Uri "$admin/roles/default-roles-health" -Headers $headers
     $patientRole = Invoke-RestMethod -Uri "$admin/roles/patient" -Headers $headers
@@ -84,6 +123,7 @@ try {
 }
 catch { Write-Warning 'Le role patient ne figurait pas dans les roles par defaut, ou il etait deja retire.' }
 
+Update-AdminToken
 $profile = Get-Content -LiteralPath (Join-Path $root 'deployment/docker/user-profile.json') -Raw
 Invoke-RestMethod -Method Put -Uri "$admin/users/profile" -Headers $headers -ContentType 'application/json' -Body $profile | Out-Null
 
