@@ -78,14 +78,19 @@ public sealed class AccountRegistrationService(IHttpClientFactory clients, IConf
 
         try
         {
-            var roleRepresentation = await client.GetFromJsonAsync<JsonElement>($"{RealmAdminBase}/roles/{role}", cancellationToken);
+            // GET /roles/{name} needs view-realm; the mappable-roles listing only needs the manage-users role the service account already holds.
+            var availableRoles = await client.GetFromJsonAsync<JsonElement[]>($"{RealmAdminBase}/users/{userId}/role-mappings/realm/available", cancellationToken) ?? [];
+            var roleRepresentation = availableRoles.FirstOrDefault(r => r.TryGetProperty("name", out var name) && name.GetString() == role);
+            if (roleRepresentation.ValueKind != JsonValueKind.Object) throw new IdentityUnavailableException("Le rôle du compte n’a pas pu être configuré.");
             using var mapping = await client.PostAsJsonAsync($"{RealmAdminBase}/users/{userId}/role-mappings/realm", new[] { roleRepresentation }, cancellationToken);
             if (!mapping.IsSuccessStatusCode) throw new IdentityUnavailableException("Le rôle du compte n’a pas pu être configuré.");
         }
-        catch
+        catch (Exception ex)
         {
+            logger.LogWarning(ex, "Keycloak role mapping failed for new account; rolling back user creation");
             await client.DeleteAsync($"{RealmAdminBase}/users/{userId}", cancellationToken);
-            throw;
+            if (ex is IdentityUnavailableException) throw;
+            throw new IdentityUnavailableException("Le rôle du compte n’a pas pu être configuré.");
         }
     }
 
