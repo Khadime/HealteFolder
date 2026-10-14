@@ -64,7 +64,7 @@ if($Mobile){
 }
 if(!$NoLaunch){
  $env:Qr__PrivateKeyPath=Join-Path $projectRoot '.secrets/qr-private.pem'
- $settings=Get-Content '.env'|ConvertFrom-StringData
+ $settings=Get-Content '.env' -Raw|ConvertFrom-StringData
  $env:Authentication__ClientSecret=$settings.HEALTH_WEB_SECRET
  $env:Registration__ClientSecret=$settings.HEALTH_REGISTRATION_SECRET
  $env:RabbitMq__Password=$settings.RABBITMQ_PASSWORD
